@@ -1,0 +1,9 @@
+[Unit]
+Description=User ydotool daemon
+
+[Service]
+ExecStart=/usr/bin/ydotoold
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

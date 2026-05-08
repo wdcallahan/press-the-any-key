@@ -1,0 +1,140 @@
+---
+- name: Require GNOME Wayland session
+  ansible.builtin.assert:
+    that:
+      - ansible_env.XDG_CURRENT_DESKTOP is defined
+      - any_key_required_desktop in ansible_env.XDG_CURRENT_DESKTOP
+      - ansible_env.XDG_SESSION_TYPE is defined
+      - ansible_env.XDG_SESSION_TYPE == any_key_required_session_type
+    fail_msg: >-
+      Any Key currently requires a GNOME Wayland login session.
+      Detected desktop={{ ansible_env.XDG_CURRENT_DESKTOP | default('unknown') }},
+      session={{ ansible_env.XDG_SESSION_TYPE | default('unknown') }}.
+
+- name: Read GNOME Shell version
+  ansible.builtin.command:
+    argv:
+      - gnome-shell
+      - --version
+  register: any_key_gnome_shell_version
+  changed_when: false
+
+- name: Extract GNOME Shell major version
+  ansible.builtin.set_fact:
+    any_key_detected_gnome_major: "{{ any_key_gnome_shell_version.stdout | regex_search('[0-9]+') }}"
+
+- name: Require tested GNOME Shell major version
+  ansible.builtin.assert:
+    that:
+      - any_key_detected_gnome_major == any_key_required_gnome_major
+    fail_msg: >-
+      Any Key shortcut deployment is only marked known-good on GNOME Shell
+      {{ any_key_required_gnome_major }}. Detected:
+      {{ any_key_gnome_shell_version.stdout }}.
+
+- name: Require gsettings
+  ansible.builtin.command:
+    argv:
+      - gsettings
+      - --version
+  register: any_key_gsettings_version
+  changed_when: false
+
+- name: Install ydotool
+  become: true
+  ansible.builtin.package:
+    name: ydotool
+    state: present
+
+- name: Require /dev/uinput to exist
+  ansible.builtin.stat:
+    path: /dev/uinput
+  register: any_key_uinput_stat
+
+- name: Confirm /dev/uinput exists
+  ansible.builtin.assert:
+    that:
+      - any_key_uinput_stat.stat.exists
+    fail_msg: "/dev/uinput does not exist. ydotoold cannot create a virtual input device."
+
+- name: Require user read and write access to /dev/uinput
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/test
+      - -r
+      - /dev/uinput
+      - -a
+      - -w
+      - /dev/uinput
+  changed_when: false
+
+- name: Require user D-Bus session bus
+  ansible.builtin.stat:
+    path: "/run/user/{{ ansible_user_uid }}/bus"
+  register: any_key_user_bus_stat
+
+- name: Confirm user D-Bus session bus exists
+  ansible.builtin.assert:
+    that:
+      - any_key_user_bus_stat.stat.exists
+    fail_msg: >-
+      User D-Bus session bus was not found at /run/user/{{ ansible_user_uid }}/bus.
+      Run this playbook from inside your logged-in GNOME session.
+
+- name: Create user bin directory
+  ansible.builtin.file:
+    path: "{{ any_key_install_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Create user systemd directory
+  ansible.builtin.file:
+    path: "{{ any_key_systemd_user_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Create Any Key helper directory
+  ansible.builtin.file:
+    path: "{{ any_key_helper_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Install any.sh
+  ansible.builtin.copy:
+    src: scripts/any.sh
+    dest: "{{ any_key_script_path }}"
+    mode: "0755"
+
+- name: Install ydotool user service
+  ansible.builtin.copy:
+    src: systemd/user/ydotool.service
+    dest: "{{ any_key_systemd_user_dir }}/{{ any_key_service_name }}"
+    mode: "0644"
+
+- name: Install GNOME shortcut helper
+  ansible.builtin.copy:
+    src: bin/ensure_gnome_shortcut.py
+    dest: "{{ any_key_helper_path }}"
+    mode: "0755"
+
+- name: Enable and start ydotool user service
+  ansible.builtin.systemd_service:
+    name: "{{ any_key_service_name }}"
+    scope: user
+    daemon_reload: true
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_user_uid }}/bus"
+
+- name: Register GNOME Any Key shortcut
+  ansible.builtin.command:
+    argv: "{{ any_key_gnome_shortcut_command }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_user_uid }}/bus"
+  register: any_key_gnome_shortcut
+  changed_when: "(any_key_gnome_shortcut.stdout | from_json).changed"
+
+...

@@ -1,0 +1,32 @@
+---
+any_key_name: "Any Key"
+any_key_binding: "F9"
+
+any_key_install_dir: "{{ ansible_env.HOME }}/bin"
+any_key_script_name: "any.sh"
+any_key_script_path: "{{ any_key_install_dir }}/{{ any_key_script_name }}"
+
+any_key_systemd_user_dir: "{{ ansible_env.HOME }}/.config/systemd/user"
+any_key_service_name: "ydotool.service"
+
+any_key_helper_dir: "{{ ansible_env.HOME }}/.local/libexec/any_key"
+any_key_helper_path: "{{ any_key_helper_dir }}/ensure_gnome_shortcut.py"
+
+any_key_required_desktop: "GNOME"
+any_key_required_session_type: "wayland"
+any_key_required_gnome_major: "50"
+
+any_key_legacy_commands:
+  - "any.sh"
+
+any_key_gnome_shortcut_command:
+  - "{{ any_key_helper_path }}"
+  - "--name"
+  - "{{ any_key_name }}"
+  - "--command"
+  - "{{ any_key_script_path }}"
+  - "--binding"
+  - "{{ any_key_binding }}"
+  - "--legacy-command"
+  - "{{ any_key_legacy_commands[0] }}"
+...

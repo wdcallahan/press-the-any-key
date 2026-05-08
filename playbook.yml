@@ -1,0 +1,9 @@
+---
+- name: Install Any Key support
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  roles:
+    - any_key
+...
