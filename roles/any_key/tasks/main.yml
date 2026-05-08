@@ -2,14 +2,14 @@
 - name: Require GNOME Wayland session
   ansible.builtin.assert:
     that:
-      - ansible_env.XDG_CURRENT_DESKTOP is defined
-      - any_key_required_desktop in ansible_env.XDG_CURRENT_DESKTOP
-      - ansible_env.XDG_SESSION_TYPE is defined
-      - ansible_env.XDG_SESSION_TYPE == any_key_required_session_type
+      - ansible_facts.env.XDG_CURRENT_DESKTOP is defined
+      - any_key_required_desktop in ansible_facts.env.XDG_CURRENT_DESKTOP
+      - ansible_facts.env.XDG_SESSION_TYPE is defined
+      - ansible_facts.env.XDG_SESSION_TYPE == any_key_required_session_type
     fail_msg: >-
       Any Key currently requires a GNOME Wayland login session.
-      Detected desktop={{ ansible_env.XDG_CURRENT_DESKTOP | default('unknown') }},
-      session={{ ansible_env.XDG_SESSION_TYPE | default('unknown') }}.
+      Detected desktop={{ ansible_facts.env.XDG_CURRENT_DESKTOP | default('unknown') }},
+      session={{ ansible_facts.env.XDG_SESSION_TYPE | default('unknown') }}.
 
 - name: Read GNOME Shell version
   ansible.builtin.command:
@@ -18,6 +18,7 @@
       - --version
   register: any_key_gnome_shell_version
   changed_when: false
+  check_mode: false
 
 - name: Extract GNOME Shell major version
   ansible.builtin.set_fact:
@@ -39,6 +40,7 @@
       - --version
   register: any_key_gsettings_version
   changed_when: false
+  check_mode: false
 
 - name: Install ydotool
   become: true
@@ -70,7 +72,7 @@
 
 - name: Require user D-Bus session bus
   ansible.builtin.stat:
-    path: "/run/user/{{ ansible_user_uid }}/bus"
+    path: "/run/user/{{ ansible_facts.user_uid }}/bus"
   register: any_key_user_bus_stat
 
 - name: Confirm user D-Bus session bus exists
@@ -78,7 +80,7 @@
     that:
       - any_key_user_bus_stat.stat.exists
     fail_msg: >-
-      User D-Bus session bus was not found at /run/user/{{ ansible_user_uid }}/bus.
+      User D-Bus session bus was not found at /run/user/{{ ansible_facts.user_uid }}/bus.
       Run this playbook from inside your logged-in GNOME session.
 
 - name: Create user bin directory
@@ -125,15 +127,15 @@
     enabled: true
     state: started
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_user_uid }}/bus"
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts.user_uid }}/bus"
 
 - name: Register GNOME Any Key shortcut
   ansible.builtin.command:
     argv: "{{ any_key_gnome_shortcut_command }}"
   environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
-    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_user_uid }}/bus"
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.user_uid }}"
+    DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts.user_uid }}/bus"
   register: any_key_gnome_shortcut
   changed_when: "(any_key_gnome_shortcut.stdout | from_json).changed"
 

@@ -32,6 +32,8 @@ def parse_gvariant(value):
 
     if value == "false":
         return False
+    if value.startswith("@as "):
+        value = value[4:]
 
     return ast.literal_eval(value)
 
@@ -78,7 +80,7 @@ def find_existing_shortcut(paths, desired_name, desired_command, legacy_commands
             or current_command in legacy_commands
         )
 
-        if name_matches or command_matches:
+        if name_matches and command_matches:
             return path
 
     return None
