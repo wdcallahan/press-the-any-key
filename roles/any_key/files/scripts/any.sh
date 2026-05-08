@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# gnome-press-the-any-key
+# Copyright 2026 W. D. Callahan II
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 SOCKET="${XDG_RUNTIME_DIR}/.ydotool_socket"
 

@@ -1,5 +1,5 @@
 ---
-- name: Install Any Key support
+- name: Install gnome-press-the-any-key
   hosts: localhost
   connection: local
   gather_facts: true

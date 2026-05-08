@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# gnome-press-the-any-key
+# Copyright 2026 W. D. Callahan II 
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
 import ast
