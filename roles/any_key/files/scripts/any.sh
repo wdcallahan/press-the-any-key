@@ -21,7 +21,7 @@ rand=${chars[$RANDOM % ${#chars[@]}]}
 # Type only after ydotoold is actually ready. This also covers the brief
 # startup window where the service is active but its socket is not yet usable.
 for _ in {1..50}; do
-    if ydotool type "$rand" 2>/dev/null; then
+    if ydotool type "$rand" >/dev/null 2>&1; then
         exit 0
     fi
 
