@@ -5,28 +5,33 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-SOCKET="${XDG_RUNTIME_DIR}/.ydotool_socket"
+SERVICE="ydotool.service"
 
-# Ensure ydotoold is available
-if [[ ! -S "$SOCKET" ]]; then
-    systemctl --user start ydotool.service
-
-    # Wait for socket to appear
-    for _ in {1..20}; do
-        [[ -S "$SOCKET" ]] && break
-        sleep 0.1
-    done
-fi
-
-# Final sanity check
-if [[ ! -S "$SOCKET" ]]; then
-    echo "ERROR: ydotool socket did not appear." >&2
-    exit 1
+# A stopped ydotoold can leave its socket pathname behind. Check the service
+# itself rather than treating a socket node as proof that the daemon is alive.
+if ! systemctl --user is-active --quiet "$SERVICE"; then
+    systemctl --user reset-failed "$SERVICE"
+    systemctl --user start "$SERVICE"
 fi
 
 # Generate random alphanumeric
 chars=({a..z} {A..Z} {0..9})
 rand=${chars[$RANDOM % ${#chars[@]}]}
 
-# Inject it
-ydotool type "$rand"
+# Type only after ydotoold is actually ready. This also covers the brief
+# startup window where the service is active but its socket is not yet usable.
+for _ in {1..50}; do
+    if ydotool type "$rand" 2>/dev/null; then
+        exit 0
+    fi
+
+    if ! systemctl --user is-active --quiet "$SERVICE"; then
+        systemctl --user reset-failed "$SERVICE"
+        systemctl --user start "$SERVICE" || true
+    fi
+
+    sleep 0.1
+done
+
+echo "ERROR: ydotoold did not become ready." >&2
+exit 1
