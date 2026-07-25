@@ -1,9 +1,13 @@
 [Unit]
 Description=User ydotool daemon
+# The user manager can start before logind has applied the uaccess ACL to
+# /dev/uinput. Keep retrying instead of exhausting systemd's start-rate limit.
+StartLimitIntervalSec=0
 
 [Service]
 ExecStart=/usr/bin/ydotoold
 Restart=on-failure
+RestartSec=1s
 
 [Install]
 WantedBy=default.target
