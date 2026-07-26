@@ -67,6 +67,24 @@ F9
 
 though this is configurable through role defaults.
 
+## Nova keyboard integration
+
+The standalone role retains `F9` as its portable default. In Nova's current
+Lemokey X2 stack, the physical Any tap follows this path instead:
+
+```text
+PB_26 → KEY_MACRO26 → XF86Macro26 → GNOME shortcut → any.sh
+```
+
+The dual-role key's hold side is Meta and is owned by the firmware/XKB project;
+this repository owns only the Any tap's shortcut and synthetic-input path.
+
+The canonical whole-system status and boundaries live in
+[`x1_keyboard_layout`](https://github.com/wdcallahan/x1_keyboard_layout):
+
+- [guided tour](https://github.com/wdcallahan/x1_keyboard_layout/blob/main/docs/nova-keyboard-input-architecture.md)
+- [technical architecture](https://github.com/wdcallahan/x1_keyboard_layout/blob/main/docs/keyboard-architecture.md)
+
 ---
 
 ## Project Layout
